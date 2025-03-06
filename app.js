@@ -1,4 +1,8 @@
-import { makeWASocket, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import {
+  DisconnectReason,
+  makeWASocket,
+  useMultiFileAuthState,
+} from "@whiskeysockets/baileys";
 import { db } from "./firebaseConfig.js";
 import { collection, addDoc } from "firebase/firestore";
 
