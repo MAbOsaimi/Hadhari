@@ -1,4 +1,10 @@
 import { makeWASocket, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import { db } from "./firebaseConfig.js";
+import { collection, addDoc } from "firebase/firestore";
+
+const storedMessages = new Set();
+let spamCount = 0;
+let hamCount = 0;
 
 const removeDiacritics = (text) => text.replace(/[\u064B-\u065F]/g, "");
 
@@ -23,61 +29,132 @@ const preprocessMessage = (message) => {
   return message;
 };
 
+async function addMessageToFirestore(
+  senderNumber,
+  groupId,
+  timestamp,
+  rawMessage,
+  preprocessedMessage,
+  prediction,
+  confidence
+) {
+  try {
+    const docRef = await addDoc(collection(db, "messages"), {
+      sender_number: senderNumber,
+      group: groupId,
+      timestamp: timestamp,
+      raw_message: rawMessage,
+      preprocessed_message: preprocessedMessage,
+      prediction: prediction,
+      confidence: confidence,
+    });
+    console.log("Document written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding document: ", e);
+  }
+}
+
 const connectToWhatsApp = async () => {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
   const sock = makeWASocket({ auth: state, printQRInTerminal: true });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
+  sock.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect } = update;
     if (connection === "close") {
-      console.log("Connection closed. Reconnecting...");
-      connectToWhatsApp();
+      const shouldReconnect =
+        lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log(
+        "connection closed due to ",
+        lastDisconnect.error,
+        ", reconnecting ",
+        shouldReconnect
+      );
+      // reconnect if not logged out
+      if (shouldReconnect) {
+        connectToWhatsApp();
+      }
     } else if (connection === "open") {
-      console.log("WhatsApp Web Connected!");
+      console.log("opened connection");
     }
   });
 
-  sock.ev.on("messages.upsert", async (m) => {
-    const msg = m.messages[0]; // Received message
+  sock.ev.on("messages.upsert", async (event) => {
+    for (const message of event.messages) {
+      if (
+        !message.message ||
+        message.message.protocolMessage ||
+        message.key.fromMe
+      ) {
+        // Skip irrelevant messages
+        continue;
+      }
+      const senderJid = message.key.participant;
+      const groupId = message.key.remoteJid.split("@")[0];
+      const senderNumber = senderJid.split("@")[0];
+      const rawMessage =
+        message.message.conversation ||
+        message.message.extendedTextMessage?.text ||
+        "";
+      const preprocessedMessage = preprocessMessage(rawMessage);
+      if (preprocessedMessage.length === 0) {
+        continue;
+      }
 
-    if (!msg.message || msg.message.protocolMessage || msg.key.fromMe) {
-      // Skip irrelevant messages
-      return;
-    }
-
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const senderNumber = senderJid.split("@")[0];
-
-    const messageText =
-      msg.message.conversation || msg.message.extendedTextMessage?.text || "";
-
-    const preprocessedMessage = preprocessMessage(messageText);
-    // Skip media-only messages
-    if (preprocessedMessage.length === 0) {
-      return;
-    }
-
-    console.log(
-      `Received message from ${senderNumber}: ${preprocessedMessage}`
-    );
-    fetch(process.env.API_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: preprocessedMessage,
-        sender_number: senderNumber,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
+      console.log(
+        `Received message from ${senderNumber}: ${preprocessedMessage}`
+      );
+      fetch(process.env.API_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: preprocessedMessage,
+          sender_number: senderNumber,
+        }),
       })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+          const prediction = data.prediction;
+          const isSpam = prediction === "Spam";
+          // Skip ham messages to avoid a significant imbalance in the data.
+          if (!isSpam && hamCount >= spamCount) {
+            console.log("Skipping ham message.");
+            return;
+          }
+
+          const confidence = isSpam ? data.confidence : 1 - data.confidence;
+
+          if (storedMessages.has(rawMessage)) {
+            console.log("Skipping duplicate message.");
+            return;
+          }
+
+          storedMessages.add(rawMessage);
+
+          if (isSpam) {
+            spamCount++;
+          } else {
+            hamCount++;
+          }
+
+          addMessageToFirestore(
+            senderNumber,
+            groupId,
+            message.messageTimestamp,
+            rawMessage,
+            preprocessedMessage,
+            prediction,
+            confidence
+          );
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
   });
 };
 
