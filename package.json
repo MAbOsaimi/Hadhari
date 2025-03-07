@@ -1,4 +1,12 @@
 {
+  "name": "hadhari",
+  "description": "Spam Detection Bot for WhatsApp",
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "spam",
+    "detection"
+  ],
   "type": "module",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.15",
@@ -7,6 +15,21 @@
     "qrcode-terminal": "^0.12.0"
   },
   "scripts": {
-    "start": "node -r dotenv/config app.js"
+    "start": "node -r dotenv/config app.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.1",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mabosaimi/Hadhari.git"
   }
 }

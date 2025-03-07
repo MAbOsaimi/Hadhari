@@ -1,4 +1,4 @@
-import { connectToWhatsApp } from "./whatsapp/bot.js";
+import { connectToWhatsApp } from './whatsapp/bot.js';
 
-console.log("Starting Hadhari...");
+console.log('Starting Hadhari...');
 connectToWhatsApp();
