@@ -1,8 +1,9 @@
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig.js";
+import { blacklistUser } from "./userService.js";
 
 const storedMessages = new Set();
-const confidenceThreshold = 60; // Messages with confidence below this value will not trigger blacklisting.
+const confidenceThreshold = 0.60; // Messages with confidence below this value will not trigger blacklisting.
 let spamCount = 0;
 let hamCount = 0;
 
@@ -81,7 +82,7 @@ export async function analyzeMessage(
     if (isSpam) {
       spamCount++;
       if (confidence >= confidenceThreshold) {
-        blackListUser(senderNumber, "AUTO", groupId, timestamp);
+        blacklistUser(senderNumber, "AUTO", groupId, timestamp);
       }
     } else {
       hamCount++;
