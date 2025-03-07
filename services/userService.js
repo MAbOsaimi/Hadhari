@@ -1,5 +1,5 @@
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig.js';
+import { db } from '../firebaseConfig.js';
 
 export async function blacklistUser(userNumber, moderator, groupId, timestamp) {
   try {

@@ -1,5 +1,5 @@
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig.js';
+import { db } from '../firebaseConfig.js';
 import { blacklistUser } from './userService.js';
 
 const confidenceThreshold = 0.6; // Messages with confidence below this value will not trigger blacklisting.
