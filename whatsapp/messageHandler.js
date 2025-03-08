@@ -2,13 +2,20 @@ import { analyzeMessage } from '../services/messageService.js';
 import { preprocessMessage } from '../utils/preprocessing.js';
 
 const getRawMessage = (message) => {
-  return (
+  const rawText =
     message.message.conversation || // Standard text messages
     message.message.extendedTextMessage?.text || // Extended text messages (e.g., forwarded messages)
     message.message.contactMessage?.displayName || // Contact name when a contact is shared
     message.message.imageMessage?.caption || // Caption from an image message
-    ''
-  );
+    '';
+
+  const groupName =
+    message.message.extendedTextMessage?.title &&
+    message.message.extendedTextMessage.title !== 'WhatsApp Group Invite'
+      ? message.message.extendedTextMessage.title
+      : '';
+
+  return groupName ? `${groupName}\n${rawText}`.trim() : rawText;
 };
 
 export async function handleIncomingMessage(sock, message) {
