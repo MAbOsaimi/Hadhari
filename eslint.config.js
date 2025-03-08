@@ -10,6 +10,12 @@ export default [
       sourceType: 'module',
       globals: globals.node,
     },
+    rules: {
+      'prefer-const': 'warn',
+      'prefer-template': 'warn',
+      'no-return-await': 'warn',
+      complexity: ['warn', 12],
+    },
   },
   pluginJs.configs.recommended,
   eslintConfigPrettier,

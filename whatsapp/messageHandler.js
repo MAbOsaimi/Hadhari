@@ -9,13 +9,10 @@ const getRawMessage = (message) => {
     message.message.imageMessage?.caption || // Caption from an image message
     '';
 
-  const groupName =
-    message.message.extendedTextMessage?.title &&
-    message.message.extendedTextMessage.title !== 'WhatsApp Group Invite'
-      ? message.message.extendedTextMessage.title
-      : '';
-
-  return groupName ? `${groupName}\n${rawText}`.trim() : rawText;
+  const groupName = message.message.extendedTextMessage?.title;
+  return groupName && groupName !== 'WhatsApp Group Invite'
+    ? `${groupName}\n${rawText}`
+    : rawText;
 };
 
 export async function handleIncomingMessage(sock, message) {
