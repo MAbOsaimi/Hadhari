@@ -2,7 +2,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig.js';
 import { blacklistUser } from './userService.js';
 
-const confidenceThreshold = 0.6; // Messages with confidence below this value will not trigger blacklisting.
+const CONFIDENCE_THRESHOLD = 0.6; // Messages with confidence below this value will not trigger blacklisting.
 let spamCount = 0;
 let hamCount = 0;
 
@@ -65,7 +65,7 @@ export async function analyzeMessage(
     const prediction = data.prediction;
     const isSpam = prediction === 'Spam';
     const confidence = isSpam ? data.confidence : 1 - data.confidence;
-    const highConfidence = confidence >= confidenceThreshold;
+    const highConfidence = confidence >= CONFIDENCE_THRESHOLD;
 
     if (isSpam) {
       spamCount++;

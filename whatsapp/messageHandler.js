@@ -1,19 +1,21 @@
 import { analyzeMessage } from '../services/messageService.js';
-import { preprocessMessage } from '../utils/preprocessing.js';
+import {
+  extractTextFromImage,
+  preprocessMessage,
+} from '../utils/preprocessing.js';
 
-const getRawMessage = (message) => {
+const MIN_MESSAGE_LENGTH = 5; 
+
+function getRawMessage(message) {
   const rawText =
-    message.message.conversation || // Standard text messages
-    message.message.extendedTextMessage?.text || // Extended text messages (e.g., forwarded messages)
-    message.message.contactMessage?.displayName || // Contact name when a contact is shared
-    message.message.imageMessage?.caption || // Caption from an image message
+    message.message.conversation ||
+    message.message.extendedTextMessage?.text ||
+    message.message.contactMessage?.displayName ||
+    message.message.imageMessage?.caption ||
     '';
 
-  const groupName = message.message.extendedTextMessage?.title;
-  return groupName && groupName !== 'WhatsApp Group Invite'
-    ? `${groupName}\n${rawText}`
-    : rawText;
-};
+  return rawText;
+}
 
 export async function handleIncomingMessage(sock, message) {
   if (
@@ -29,18 +31,25 @@ export async function handleIncomingMessage(sock, message) {
   const messageKey = message.key;
   const senderNumber = senderJid.split('@')[0];
 
-  const rawMessage = getRawMessage(message);
-
-  if (!rawMessage) {
+  const rawMessage = await getRawMessage(message);
+  if (rawMessage.length <= MIN_MESSAGE_LENGTH) {
     return;
   }
 
-  const timestamp = message.messageTimestamp || new Date().getTime();
-  const preprocessedMessage = preprocessMessage(rawMessage);
+  const timestamp = new Date(message.messageTimestamp * 1000);
 
-  if (preprocessedMessage.length === 0) {
-    return; // Skip messages with no text (e.g., media)
-  }
+  // Extract OCR text if the message contains an image
+  const parsedText = await extractTextFromImage(message);
+
+  const groupName =
+    message.message.extendedTextMessage?.title === 'WhatsApp Group Invite'
+      ? message.message.extendedTextMessage.title
+      : '';
+
+  const messageForProcessing =
+    `${groupName}\n${parsedText}\n${rawMessage}`.trim();
+
+  const preprocessedMessage = preprocessMessage(messageForProcessing);
 
   analyzeMessage(
     sock,
