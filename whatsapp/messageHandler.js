@@ -4,7 +4,7 @@ import {
   preprocessMessage,
 } from '../utils/preprocessing.js';
 
-const MIN_MESSAGE_LENGTH = 5; 
+const MIN_MESSAGE_LENGTH = 5;
 
 function getRawMessage(message) {
   const rawText =
@@ -36,7 +36,7 @@ export async function handleIncomingMessage(sock, message) {
     return;
   }
 
-  const timestamp = new Date(message.messageTimestamp * 1000);
+  const timestamp = message.messageTimestamp;
 
   // Extract OCR text if the message contains an image
   const parsedText = await extractTextFromImage(message);
@@ -48,6 +48,10 @@ export async function handleIncomingMessage(sock, message) {
 
   const messageForProcessing =
     `${groupName}\n${parsedText}\n${rawMessage}`.trim();
+
+  if (messageForProcessing.length <= MIN_MESSAGE_LENGTH * 3.5) {
+    return;
+  }
 
   const preprocessedMessage = preprocessMessage(messageForProcessing);
 

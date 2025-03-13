@@ -17,6 +17,7 @@ export async function addMessageToFirestore(
   preprocessedMessage,
   prediction,
   confidence,
+  validated,
 ) {
   try {
     const docRef = await addDoc(collection(db, 'messages'), {
@@ -27,6 +28,7 @@ export async function addMessageToFirestore(
       preprocessed_message: preprocessedMessage,
       prediction: prediction,
       confidence: confidence,
+      validated: validated,
     });
     console.log('Document written in messages with ID:', docRef.id);
   } catch (e) {
@@ -94,6 +96,7 @@ export async function analyzeMessage(
       preprocessedMessage,
       prediction,
       confidence,
+      false,
     );
   } catch (error) {
     console.error('Error:', error);
