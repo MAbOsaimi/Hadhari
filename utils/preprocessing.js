@@ -2,6 +2,7 @@ import {
   downloadMediaMessage,
   extensionForMediaMessage,
 } from '@whiskeysockets/baileys';
+import logger from './logger.js';
 
 export function removeDiacritics(text) {
   return text.replace(/[\u064B-\u065F]/g, '');
@@ -51,9 +52,17 @@ export async function extractTextFromImage(message) {
     });
 
     const data = await response.json();
-    return data?.ParsedResults?.[0]?.ParsedText?.trim() || '';
+    const extractedText = data?.ParsedResults?.[0]?.ParsedText?.trim() || '';
+
+    if (!extractedText) {
+      logger.warn({ imageExtension }, 'OCR returned empty text.');
+    } else {
+      logger.debug({ extractedText }, 'OCR extracted text.');
+    }
+
+    return extractedText;
   } catch (error) {
-    console.error('Error parsing image:', error);
+    logger.error({ error }, 'Error parsing image via OCR API');
     return '';
   }
 }

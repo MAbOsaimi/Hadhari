@@ -32,9 +32,15 @@ export async function addMessageToFirestore(
       validated: validated,
     });
 
-    logger.debug('Document added with ID:', docRef.id);
+    logger.debug(
+      { docId: docRef.id, senderNumber, groupId },
+      'Message added to Firestore',
+    );
   } catch (error) {
-    logger.error({ error }, 'Error adding message to Firestore');
+    logger.error(
+      { error, senderNumber, groupId },
+      'Error adding message to Firestore',
+    );
   }
 }
 
@@ -51,7 +57,8 @@ export async function analyzeMessage(
   messageKey,
 ) {
   logger.debug(
-    `Processing message from ${senderNumber}: ${preprocessedMessage}`,
+    { senderNumber, preprocessedMessage },
+    'Processing incoming message',
   );
 
   try {
@@ -64,7 +71,13 @@ export async function analyzeMessage(
       }),
     });
 
-    if (!response) return;
+    if (!response) {
+      logger.error(
+        { status: response.status, statusText: response.statusText },
+        'API responded with an error',
+      );
+      return;
+    }
     const data = await response.json();
     const prediction = data.prediction;
     const isSpam = prediction === 'Spam';
@@ -73,6 +86,7 @@ export async function analyzeMessage(
 
     if (isSpam) {
       spamCount++;
+
       if (highConfidence) {
         blacklistUser(senderNumber, 'AUTO', groupJid, timestamp);
       }
@@ -86,8 +100,14 @@ export async function analyzeMessage(
       if (hamCount >= spamCount) {
         return;
       }
+
       hamCount++;
     }
+
+    logger.info(
+      { senderNumber, preprocessedMessage, prediction, confidence },
+      'Adding message to Firestore',
+    );
 
     addMessageToFirestore(
       senderNumber,
@@ -100,7 +120,10 @@ export async function analyzeMessage(
       false,
     );
   } catch (error) {
-    logger.error({ error }, 'Error processing message');
+    logger.error(
+      { error, senderNumber, preprocessedMessage },
+      'Error processing message',
+    );
   }
 }
 
@@ -116,8 +139,8 @@ export async function sendReaction(sock, groupJid, messageKey, reaction) {
       },
     });
 
-    logger.debug(`Reacted with ${reaction} to message ${messageKey}`);
+    logger.debug({ reaction, messageKey }, 'Reaction sent to message');
   } catch (error) {
-    logger.error({ error }, 'Error sending reaction');
+    logger.error({ error, reaction, messageKey }, 'Error sending reaction');
   }
 }

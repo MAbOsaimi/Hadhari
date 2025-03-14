@@ -19,9 +19,14 @@ export const connectToWhatsApp = async () => {
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect } = update;
     if (connection === 'close') {
-      const shouldReconnect =
-        lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      logger.warn('Connection closed, reconnecting:', shouldReconnect);
+      const reason = lastDisconnect?.error?.output?.statusCode || 'Unknown';
+      const shouldReconnect = reason !== DisconnectReason.loggedOut;
+
+      logger.warn(
+        { reason, shouldReconnect },
+        'Connection closed. Attempting reconnect...',
+      );
+
       if (shouldReconnect) connectToWhatsApp();
     } else if (connection === 'open') {
       logger.info('WhatsApp Web Connected!');
@@ -30,7 +35,11 @@ export const connectToWhatsApp = async () => {
 
   sock.ev.on('messages.upsert', async (event) => {
     for (const message of event.messages) {
-      await handleIncomingMessage(sock, message);
+      try {
+        await handleIncomingMessage(sock, message);
+      } catch (error) {
+        logger.error({ error, message }, 'Error handling incoming message');
+      }
     }
   });
 };

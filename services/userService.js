@@ -9,9 +9,9 @@ export async function blacklistUser(userNumber, moderator, groupId, timestamp) {
       group: groupId,
       timestamp: timestamp,
     });
-    logger.debug('User blacklisted:', userNumber);
+    logger.info({ userNumber, moderator, groupId }, 'User blacklisted');
   } catch (error) {
-    logger.error({ error }, 'Error blacklisting user');
+    logger.error({ error, userNumber }, 'Error blacklisting user');
   }
 }
 
@@ -22,26 +22,26 @@ export async function whitelistUser(userNumber, moderator, groupId, timestamp) {
       group: groupId,
       timestamp: timestamp,
     });
-    logger.debug('User whitelisted:', userNumber);
+    logger.info({ userNumber, moderator, groupId }, 'User whitelisted');
   } catch (error) {
-    logger.error({ error }, 'Error whitelisting user');
+    logger.error({ error, userNumber }, 'Error whitelisting user');
   }
 }
 
 export async function unblacklistUser(userNumber) {
   try {
     await deleteDoc(doc(db, 'blacklist', userNumber));
-    logger.debug('User unblacklisted:', userNumber);
+    logger.info({ userNumber }, 'User unblacklisted');
   } catch (error) {
-    logger.error({ error }, 'Error unblacklisting user');
+    logger.error({ error, userNumber }, 'Error unblacklisting user');
   }
 }
 
 export async function unwhitelistUser(userNumber) {
   try {
     await deleteDoc(doc(db, 'whitelist', userNumber));
-    logger.debug('User unwhitelisted:', userNumber);
+    logger.info({ userNumber }, 'User unwhitelisted');
   } catch (error) {
-    logger.error({ error }, 'Error unwhitelisting user');
+    logger.error({ error, userNumber }, 'Error unwhitelisting user');
   }
 }

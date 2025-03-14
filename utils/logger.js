@@ -27,6 +27,13 @@ const pinoConfig = {
     transport: {
       targets: [
         {
+          target: '@logtail/pino',
+          options: {
+            sourceToken: process.env.LOGTAIL_TOKEN,
+            options: { endpoint: process.env.LOGTAIL_HOST },
+          },
+        },
+        {
           target: 'pino/file',
           level: 'info',
           options: {
