@@ -1,6 +1,7 @@
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig.js';
 import { blacklistUser } from './userService.js';
+import logger from '../utils/logger.js';
 
 const CONFIDENCE_THRESHOLD = 0.6; // Messages with confidence below this value will not trigger blacklisting.
 let spamCount = 0;
@@ -30,9 +31,10 @@ export async function addMessageToFirestore(
       confidence: confidence,
       validated: validated,
     });
-    console.log('Document written in messages with ID:', docRef.id);
-  } catch (e) {
-    console.error('Error adding document to messages:', e);
+
+    logger.debug('Document added with ID:', docRef.id);
+  } catch (error) {
+    logger.error({ error }, 'Error adding message to Firestore');
   }
 }
 
@@ -48,7 +50,7 @@ export async function analyzeMessage(
   timestamp,
   messageKey,
 ) {
-  console.log(
+  logger.debug(
     `Processing message from ${senderNumber}: ${preprocessedMessage}`,
   );
 
@@ -82,7 +84,6 @@ export async function analyzeMessage(
       );
     } else {
       if (hamCount >= spamCount) {
-        console.log('Skipping ham message.');
         return;
       }
       hamCount++;
@@ -99,7 +100,7 @@ export async function analyzeMessage(
       false,
     );
   } catch (error) {
-    console.error('Error:', error);
+    logger.error({ error }, 'Error processing message');
   }
 }
 
@@ -108,7 +109,6 @@ export async function analyzeMessage(
  */
 export async function sendReaction(sock, groupJid, messageKey, reaction) {
   try {
-    console.log('Sending reaction with key:', messageKey);
     await sock.sendMessage(groupJid, {
       react: {
         text: reaction,
@@ -116,10 +116,8 @@ export async function sendReaction(sock, groupJid, messageKey, reaction) {
       },
     });
 
-    console.log(
-      `Reaction '${reaction}' successfully sent to message ${messageKey.id}`,
-    );
+    logger.debug(`Reacted with ${reaction} to message ${messageKey}`);
   } catch (error) {
-    console.error('Failed to add reaction:', error);
+    logger.error({ error }, 'Error sending reaction');
   }
 }

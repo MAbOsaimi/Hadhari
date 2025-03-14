@@ -49,10 +49,6 @@ export async function handleIncomingMessage(sock, message) {
   const messageForProcessing =
     `${groupName}\n${parsedText}\n${rawMessage}`.trim();
 
-  if (messageForProcessing.length <= MIN_MESSAGE_LENGTH * 3.5) {
-    return;
-  }
-
   const preprocessedMessage = preprocessMessage(messageForProcessing);
 
   analyzeMessage(

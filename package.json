@@ -8,22 +8,27 @@
     "detection"
   ],
   "type": "module",
-  "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.15",
-    "dotenv": "^16.4.7",
-    "firebase": "^11.4.0"
-  },
   "scripts": {
-    "start": "node -r dotenv/config app.js",
+    "start": "NODE_ENV=production node -r dotenv/config app.js",
+    "dev": "NODE_ENV=development node -r dotenv/config app.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "license": "MIT",
+  "packageManager": "pnpm@10.6.1",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.15",
+    "dotenv": "^16.4.7",
+    "firebase": "^11.4.0",
+    "pino": "^9.6.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
     "globals": "^16.0.0",
+    "pino-pretty": "^13.0.0",
     "prettier": "^3.5.3",
     "qrcode-terminal": "^0.12.0"
   },
